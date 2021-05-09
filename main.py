@@ -1,4 +1,4 @@
 from cpf import valida_cpf
-from tela_cadastro import TelaDeCadastro
+from telas import *
 
-TelaDeCadastro()
+TelaPricnipal()
