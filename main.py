@@ -1,4 +1,6 @@
 from cpf import valida_cpf
 from telas import *
+from programa import Programa
 
-TelaPricnipal()
+programa = Programa()
+TelaPricnipal(programa)
