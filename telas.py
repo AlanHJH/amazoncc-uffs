@@ -37,13 +37,18 @@ class TelaPricnipal(Tela):
     programa = None
     def __init__(self, programa):
         self.programa = programa
-        self.print_screen("Usuario não encontrado, por favor se logar ou criar conta.")
+        msg = ""
+        if self.programa.usuario_logado != None:
+            msg = "Ola, " + self.programa.usuario_logado.nome
+        else:
+            msg = "Usuario não encontrado, por favor se logar ou criar conta."
+        self.print_screen(msg)
         self.pedir_opcao_menu()
 
     def print_screen(self, msg=""):
         self.linha = self.linhas
         self.print_ascii_texto("  Amazon UFFS")
-        self.print_menu_list(["Cadastrar", "Login", "Sair"], 35)
+        self.print_menu_list(["Cadastrar", "Login", "Ver Carrinho", "Comprar","Ver Produtos", "Sair"], 35)
         self.print_linhas(5)
         self.print_texto(msg, (self.colunas // 2) - (len(msg) // 2))
         self.print_linhas(self.linha - 1)
@@ -56,6 +61,8 @@ class TelaPricnipal(Tela):
         else:
             if opcao == 0:
                 TelaCadastro(self.programa)
+            if opcao == 1:
+                TelaLogin(self.programa)
 
 class TelaCadastro(Tela):
     nome = None
@@ -126,3 +133,63 @@ class TelaCadastro(Tela):
                 TelaPricnipal(self.programa)
             else:
                 TelaPricnipal(self.programa)
+
+class TelaLogin(Tela):
+    email = None
+    senha = None
+    def __init__(self, programa):
+        self.programa = programa
+        self.print_screen()
+
+    def get_quntidade_campos_preenchido(self):
+        campos_preenchidos = 0
+        if self.email != None:
+            campos_preenchidos += 1
+        if self.senha != None:
+            campos_preenchidos += 1
+        return campos_preenchidos
+
+    def print_screen(self, msg="Caso queira sair digite 's' e aperte ENTER"):
+        self.linha = self.linhas
+        self.print_ascii_texto("  Login")
+
+        self.print_linhas(4)
+        self.print_texto(msg, (self.colunas // 2) - (len(msg) // 2))
+
+        campos_preenchidos = self.get_quntidade_campos_preenchido()
+        self.print_linhas(self.linha - campos_preenchidos - 1)
+
+        if self.email != None:
+            self.print_campo(" E-mail", self.email)
+        if self.senha != None:
+            self.print_campo(" Senha", self.senha)
+
+        self.pedir_proximo_campo()
+
+    def pedir_proximo_campo(self):
+        posible_options = ["n","s","sim","não","nao"]
+        if self.email == None:
+            self.email = str(input(" E-mail: "))
+            if self.email == 's' or self.email == 'S':
+                TelaPricnipal(self.programa)
+            else:
+                self.print_screen()
+        if self.senha == None:
+            self.senha = str(input(" Senha: "))
+            if self.senha == 's' or self.senha == 'S':
+                TelaPricnipal(self.programa)
+            else:
+                self.print_screen()
+
+        usuario = self.programa.user_exists(self.email, self.senha)
+        
+        if usuario == None:
+            self.email = None
+            self.senha = None
+            self.print_screen("Combinação usuário e senha não encontrado")
+        else:
+            self.programa.set_usuario_logado(usuario)
+            TelaPricnipal(self.programa)
+
+        
+        
