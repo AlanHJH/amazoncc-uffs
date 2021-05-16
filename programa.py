@@ -41,7 +41,6 @@ class Programa:
             Produto("28Tomate Kg", 5.5),
             Produto("29Tomate Kg", 5.5)
         ]
-
         self.carrinho = [
             Produto("1Pasta de dente", 22.50),
             Produto("2Tomate Kg", 5.5),
@@ -50,6 +49,12 @@ class Programa:
             Produto("5Pasta de dente", 22.50),
             Produto("6Tomate Kg", 5.5)
         ]
+        self.usuario_logado = Usuario(
+            nome="Alan Henrique Jahnel",
+            cpf="11374288993",
+            senha="123",
+            email="alanjahnel123@gmail.com"
+        )
     
     def add_usuario(self, usuario):
         self.usuarios.append(usuario)
@@ -102,3 +107,9 @@ class Programa:
         
         return lista_final
 
+    def get_usuario_by_cpf(self, cpf):
+        usuario_resposta = None
+        for usuario in self.usuarios:
+            if usuario.cpf == cpf:
+                usuario_resposta = usuario
+        return usuario_resposta

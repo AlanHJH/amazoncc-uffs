@@ -1,5 +1,6 @@
 from art import *
 from entidades.usuario import Usuario
+from cpf import valida_cpf
 
 lower = 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'
 upper = 'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
@@ -72,7 +73,7 @@ class TelaPricnipal(Tela):
     def print_screen(self, msg=""):
         self.linha = self.linhas
         self.print_ascii_texto("  Amazon UFFS")
-        self.print_menu_list(["Cadastrar", "Login", "Ver Carrinho", "Comprar","Ver Produtos", "Sair"], 35)
+        self.print_menu_list(["Cadastrar", "Login", "Ver Carrinho","Ver Produtos","Clientes", "Sair"], 35)
         self.print_linhas(5)
         self.print_texto(msg, (self.colunas // 2) - (len(msg) // 2))
         self.print_linhas(self.linha - 1)
@@ -88,9 +89,23 @@ class TelaPricnipal(Tela):
             if opcao == 1:
                 TelaLogin(self.programa)
             if opcao == 2:
-
+                if self.programa.usuario_logado == None:
+                    self.print_screen("Para acessar esta opção é necessário que você esteja logado!")
+                    self.pedir_opcao_menu()
+                else:
+                    TelaCarrinho(self.programa)
+            if opcao == 3:
+                if self.programa.usuario_logado == None:
+                    self.print_screen("Para acessar esta opção é necessário que você esteja logado!")
+                    self.pedir_opcao_menu()
+                else:
+                    TelaProdutos(self.programa)
             if opcao == 4:
-                TelaProdutos(self.programa)
+                if self.programa.usuario_logado == None:
+                    self.print_screen("Para acessar esta opção é necessário que você esteja logado!")
+                    self.pedir_opcao_menu()
+                else:
+                    TelaClientes(self.programa)
             if opcao == 5:
                 self.programa.end_program()
 
@@ -102,7 +117,7 @@ class TelaCadastro(Tela):
     programa = None
     def __init__(self, programa):
         self.programa = programa
-        self.print_screen()
+        self.print_screen("Para sair digite 's'")
 
     def get_quntidade_campos_preenchido(self):
         campos_preenchidos = 0
@@ -136,21 +151,72 @@ class TelaCadastro(Tela):
             self.print_campo(" Senha", "*" * len(str(self.senha)))
 
         self.pedir_proximo_campo()
+    
+    def valida_nome(self):
+        erro = ""
+
+        if self.nome == 's':
+            TelaPricnipal(self.programa)
+        
+        if len(erro) > 0:
+            self.nome = None
+
+        return erro
+    
+    def valida_email(self):
+        erro = ""
+
+        if self.email == 's':
+            TelaPricnipal(self.programa)
+        
+        if len(erro) > 0:
+            self.email = None
+
+        return erro
+    
+    def valida_cpf(self):
+        erro = ""
+
+        if self.cpf == 's':
+            TelaPricnipal(self.programa)
+        
+        if valida_cpf(self.cpf) == False:
+            erro = "ERRO: CPF Invalido!"
+
+        if len(erro) > 0:
+            self.cpf = None
+
+        return erro
+
+    def valida_senha(self):
+        erro = ""
+
+        if self.senha == 's':
+            TelaPricnipal(self.programa)
+
+        if len(erro) > 0:
+            self.senha = None
+
+        return erro
 
     def pedir_proximo_campo(self):
         posible_options = ["n","s","sim","não","nao"]
         if self.nome == None:
             self.nome = str(input(" Digite o seu nome: "))
-            self.print_screen()
+            msg = self.valida_nome()
+            self.print_screen(msg)
         if self.email == None:
             self.email = str(input(" Digite o seu e-mail: "))
-            self.print_screen()
+            msg = self.valida_email()
+            self.print_screen(msg)
         if self.cpf == None:
             self.cpf = str(input(" Digite o seu cpf: "))
-            self.print_screen()
+            msg = self.valida_cpf()
+            self.print_screen(msg)
         if self.senha == None:
             self.senha = str(input(" Digite o seu senha: "))
-            self.print_screen()
+            msg = self.valida_senha()
+            self.print_screen(msg)
         
         con = str(input(" Deseja confirmar o seu cadastro?   (s) sim (n) não : "))
         con.lower()
@@ -295,3 +361,49 @@ class TelaCarrinho(Tela):
                 self.print_screen()
             else:
                 self.print_screen("Caracter invalido!")
+
+class TelaClientes(Tela):
+    programa = None
+    cpf = None
+    nome = None
+    email = None
+    def __init__(self, programa):
+        self.programa = programa
+        self.cpf = None
+        self.nome = None
+        self.email = None
+        self.print_screen()
+        self.get_cpf()
+    
+    def get_produtos(self):
+        return self.programa.get_prdutos( 0)
+
+    def print_screen(self, msg="Nenhum usuário encontrado!"):
+        self.linha = self.linhas
+        self.print_ascii_texto(" Usuarios")
+        self.print_linhas(4)
+
+        if self.cpf == None:
+            self.print_texto(msg, (self.colunas // 2) - (len(msg) // 2))
+        else:
+            self.print_texto("Nome: " + self.nome, 2)
+            self.print_texto("E-mail: " + self.email, 2)
+        self.print_linhas(self.linha - 2)
+        self.print_texto("Para sair digite 's'",0)
+        
+
+    def get_cpf(self):
+        self.cpf = str(input("Digite o cpf do usuário que deseja consultar:"))
+        if self.cpf == 's':
+            TelaPricnipal(self.programa)
+        else:
+            usuario_pesquisa = self.programa.get_usuario_by_cpf(self.cpf)
+            if usuario_pesquisa != None:
+                self.cpf = usuario_pesquisa.cpf
+                self.email = usuario_pesquisa.email
+                self.nome = usuario_pesquisa.nome
+            else:
+                self.cpf = None
+            self.print_screen()
+            self.get_cpf()
+        
