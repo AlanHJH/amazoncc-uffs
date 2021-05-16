@@ -1,6 +1,9 @@
 from art import *
 from entidades.usuario import Usuario
 
+lower = 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'
+upper = 'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
+
 class Tela:
     linha = 24
     linhas = 24
@@ -10,10 +13,31 @@ class Tela:
         self.colunas = 80
         self.linha = 24
 
-    def print_menu_list(self, itens, spacing_left):
+    def print_menu_list(self, itens, spacing_left, starting = 0):
         self.linha -= len(itens)
         for posicao in range(len(itens)):
-            print(" " * spacing_left + str(posicao) + " - " + itens[posicao])
+            num_item = starting + posicao
+            spacing_number = ""
+            if num_item < 10:
+                spacing_number = " "
+            print(" " * spacing_left + str(num_item) + spacing_number + " - " + itens[posicao])
+
+    def print_menu_listas(self, itens, itens2 , spacing_left):
+        quantidade_coluna = 10
+        self.linha -= len(itens)
+        for posicao in range(len(itens)):
+            
+            coluna_esquerda = ""
+            coluna_direita = ""
+
+            if posicao < len(itens):
+                coluna_esquerda = " " * spacing_left + str(posicao) + " - " + itens[posicao]
+
+            if posicao < len(itens2):
+                espacamento_esquerda = 40 - len(coluna_esquerda) - 1 
+                coluna_direita = "  " * espacamento_esquerda + " " + str(posicao + quantidade_coluna) + "-" + itens2[posicao]
+
+            print(coluna_esquerda + coluna_direita)
     
     def print_ascii_texto(self, texto):
         self.linha -= 7
@@ -55,7 +79,7 @@ class TelaPricnipal(Tela):
 
     def pedir_opcao_menu(self):
         opcao = int(input(" Digite a opção desejada: "))
-        if (opcao < 0) or (opcao > 2):
+        if (opcao < 0) or (opcao > 5):
             self.print_screen("Opção invalida")
             self.pedir_opcao_menu()
         else:
@@ -63,6 +87,12 @@ class TelaPricnipal(Tela):
                 TelaCadastro(self.programa)
             if opcao == 1:
                 TelaLogin(self.programa)
+            if opcao == 2:
+
+            if opcao == 4:
+                TelaProdutos(self.programa)
+            if opcao == 5:
+                self.programa.end_program()
 
 class TelaCadastro(Tela):
     nome = None
@@ -192,4 +222,76 @@ class TelaLogin(Tela):
             TelaPricnipal(self.programa)
 
         
-        
+class TelaProdutos(Tela):
+    programa = None
+    pagina_atual = 0
+    def __init__(self, programa):
+        self.programa = programa
+        self.pagina_atual = 0
+        self.print_screen()
+    
+    def get_produtos(self):
+        return self.programa.get_prdutos( 0)
+
+    def print_screen(self, msg=""):
+        self.linha = self.linhas
+        self.print_ascii_texto(" Produtos")
+        self.print_menu_list(self.programa.get_prdutos( self.pagina_atual),2,self.pagina_atual * 14)
+        self.print_linhas(self.linha - 2)
+        self.print_texto("Pagina atual: " + str(self.pagina_atual)  + " - Digite 's' para sair | " + msg, 0)
+        self.get_pagina()
+
+    
+    def get_pagina(self):
+        pg = str(input("Qual pagina deseja visualizar: "))
+        if pg == 's':
+            TelaPricnipal(self.programa) 
+        else:
+            is_number = True
+
+            for i in pg:
+                if i  in lower + upper:
+                    is_number = False
+
+            if is_number:
+                self.pagina_atual = int(pg)
+                self.print_screen()
+            else:
+                self.print_screen("Caracter invalido!")
+
+class TelaCarrinho(Tela):
+    programa = None
+    pagina_atual = 0
+    def __init__(self, programa):
+        self.programa = programa
+        self.pagina_atual = 0
+        self.print_screen()
+    
+    def get_produtos(self):
+        return self.programa.get_prdutos( 0)
+
+    def print_screen(self, msg=""):
+        self.linha = self.linhas
+        self.print_ascii_texto(" Carinho")
+        self.print_menu_list(self.programa.get_prdutos_carrinho( self.pagina_atual),2,self.pagina_atual * 14)
+        self.print_linhas(self.linha - 2)
+        self.print_texto("Pagina atual: " + str(self.pagina_atual)  + " - Digite 's' para sair | " + msg, 0)
+        self.get_pagina()
+
+    
+    def get_pagina(self):
+        pg = str(input("Qual pagina deseja visualizar: "))
+        if pg == 's':
+            TelaPricnipal(self.programa) 
+        else:
+            is_number = True
+
+            for i in pg:
+                if i  in lower + upper:
+                    is_number = False
+
+            if is_number:
+                self.pagina_atual = int(pg)
+                self.print_screen()
+            else:
+                self.print_screen("Caracter invalido!")
