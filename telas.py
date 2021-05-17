@@ -1,6 +1,6 @@
 from art import *
 from entidades.usuario import Usuario
-from cpf import valida_cpf
+from cpf import valida_cpf, get_numbers
 
 lower = 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'
 upper = 'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
@@ -73,14 +73,21 @@ class TelaPricnipal(Tela):
     def print_screen(self, msg=""):
         self.linha = self.linhas
         self.print_ascii_texto("  Amazon UFFS")
-        self.print_menu_list(["Cadastrar", "Login", "Ver Carrinho","Ver Produtos","Clientes", "Sair"], 35)
+        self.print_menu_list(["Cadastrar", "Login", "Ver Carrinho","Ver Produtos","Clientes", "Limpar Saldo", "Sair"], 35)
         self.print_linhas(5)
         self.print_texto(msg, (self.colunas // 2) - (len(msg) // 2))
         self.print_linhas(self.linha - 1)
 
     def pedir_opcao_menu(self):
-        opcao = int(input(" Digite a opção desejada: "))
-        if (opcao < 0) or (opcao > 5):
+        opcao = str(input(" Digite a opção desejada: "))
+        opcao = get_numbers(opcao)
+
+        if len(opcao) > 0:
+            opcao = int(opcao)
+        else: 
+            opcao = -1
+
+        if (opcao < 0) or (opcao > 6):
             self.print_screen("Opção invalida")
             self.pedir_opcao_menu()
         else:
@@ -107,6 +114,14 @@ class TelaPricnipal(Tela):
                 else:
                     TelaClientes(self.programa)
             if opcao == 5:
+                if self.programa.usuario_logado == None:
+                    self.print_screen("Para acessar esta opção é necessário que você esteja logado!")
+                    self.pedir_opcao_menu()
+                else:
+                    self.programa.limpa_saldo()
+                    self.print_screen("Saldo Liberado")
+                    self.pedir_opcao_menu()
+            if opcao == 6:
                 self.programa.end_program()
 
 class TelaCadastro(Tela):
@@ -158,6 +173,12 @@ class TelaCadastro(Tela):
         if self.nome == 's':
             TelaPricnipal(self.programa)
         
+        if self.programa.is_nome_unique(self.nome) == False:
+            erro = "ERRO: Nome ja esta sendo utilizado"
+        
+        if self.nome == "":
+            erro = "ERRO: Nome é campo obrigatório"
+        
         if len(erro) > 0:
             self.nome = None
 
@@ -168,6 +189,12 @@ class TelaCadastro(Tela):
 
         if self.email == 's':
             TelaPricnipal(self.programa)
+        
+        if self.programa.is_email_unique(self.email) == False:
+            erro = "ERRO: E-mail ja esta sendo utilizado"
+        
+        if self.email == "":
+            erro = "ERRO: E-mail é campo obrigatório"
         
         if len(erro) > 0:
             self.email = None
@@ -181,7 +208,10 @@ class TelaCadastro(Tela):
             TelaPricnipal(self.programa)
         
         if valida_cpf(self.cpf) == False:
-            erro = "ERRO: CPF Invalido!"
+            erro = "ERRO: CPF Inválido!"
+
+        if self.programa.is_cpf_unique(self.cpf) == False:
+            erro = "ERRO: CPF ja esta sendo utilizado"
 
         if len(erro) > 0:
             self.cpf = None
@@ -231,7 +261,7 @@ class TelaCadastro(Tela):
                 TelaPricnipal(self.programa)
 
 class TelaLogin(Tela):
-    email = None
+    cpf = None
     senha = None
     def __init__(self, programa):
         self.programa = programa
@@ -239,7 +269,7 @@ class TelaLogin(Tela):
 
     def get_quntidade_campos_preenchido(self):
         campos_preenchidos = 0
-        if self.email != None:
+        if self.cpf != None:
             campos_preenchidos += 1
         if self.senha != None:
             campos_preenchidos += 1
@@ -255,18 +285,17 @@ class TelaLogin(Tela):
         campos_preenchidos = self.get_quntidade_campos_preenchido()
         self.print_linhas(self.linha - campos_preenchidos - 1)
 
-        if self.email != None:
-            self.print_campo(" E-mail", self.email)
+        if self.cpf != None:
+            self.print_campo(" CPF", self.cpf)
         if self.senha != None:
             self.print_campo(" Senha", self.senha)
 
         self.pedir_proximo_campo()
 
     def pedir_proximo_campo(self):
-        posible_options = ["n","s","sim","não","nao"]
-        if self.email == None:
-            self.email = str(input(" E-mail: "))
-            if self.email == 's' or self.email == 'S':
+        if self.cpf == None:
+            self.cpf = str(input(" CPF: "))
+            if self.cpf == 's' or self.cpf == 'S':
                 TelaPricnipal(self.programa)
             else:
                 self.print_screen()
@@ -277,10 +306,10 @@ class TelaLogin(Tela):
             else:
                 self.print_screen()
 
-        usuario = self.programa.user_exists(self.email, self.senha)
+        usuario = self.programa.user_exists(self.cpf, self.senha)
         
         if usuario == None:
-            self.email = None
+            self.cpf = None
             self.senha = None
             self.print_screen("Combinação usuário e senha não encontrado")
         else:
@@ -295,6 +324,7 @@ class TelaProdutos(Tela):
         self.programa = programa
         self.pagina_atual = 0
         self.print_screen()
+        self.get_pagina()
     
     def get_produtos(self):
         return self.programa.get_prdutos( 0)
@@ -304,14 +334,61 @@ class TelaProdutos(Tela):
         self.print_ascii_texto(" Produtos")
         self.print_menu_list(self.programa.get_prdutos( self.pagina_atual),2,self.pagina_atual * 14)
         self.print_linhas(self.linha - 2)
-        self.print_texto("Pagina atual: " + str(self.pagina_atual)  + " - Digite 's' para sair | " + msg, 0)
-        self.get_pagina()
-
+        self.print_texto("Pagina atual: " + str(self.pagina_atual)  + " - Digite 's' para sair e 'c' para comprar | " + msg, 0)
     
+    def get_compra(self):
+        codigo = str(input("Qual produto deseja comprar: "))    
+
+        codigo = get_numbers(codigo)
+
+        if len(codigo) > 0:
+            codigo = int(codigo)
+        else: 
+            codigo = -1
+
+        if codigo > len(self.programa.produtos) or codigo < 0:
+            self.print_screen("Código Inválido!")
+            self.get_compra()
+        else:
+            self.print_screen()
+            quantidade = str(input("Quantidade: "))
+
+            if quantidade == "" or quantidade == None:
+                quantidade = 0
+            else:
+                quantidade = float(quantidade)
+
+            saldo_item = self.programa.produtos[codigo].preco *quantidade
+            possivel_total = self.programa.get_saldo_carrinho() + saldo_item
+
+            while possivel_total > 1000:
+                self.print_screen("Qtd Muito Alta!")
+                quantidade = str(input("Quantidade: "))
+
+                if quantidade == "" or quantidade == None:
+                    quantidade = 0
+                else:
+                    quantidade = float(quantidade)
+
+                saldo_item = self.programa.produtos[codigo].preco *quantidade
+                possivel_total = self.programa.get_saldo_carrinho() + saldo_item
+
+            self.programa.adicionar_no_carrinho(codigo, quantidade)
+            self.print_screen()
+            self.get_pagina()
+
     def get_pagina(self):
         pg = str(input("Qual pagina deseja visualizar: "))
+
+        if pg == None or pg == "":
+            self.print_screen("Código Inválido!")
+            self.get_pagina()
+
         if pg == 's':
             TelaPricnipal(self.programa) 
+        elif pg == 'c':
+            self.print_screen()
+            self.get_compra()
         else:
             is_number = True
 
@@ -322,8 +399,10 @@ class TelaProdutos(Tela):
             if is_number:
                 self.pagina_atual = int(pg)
                 self.print_screen()
+                self.get_pagina()
             else:
-                self.print_screen("Caracter invalido!")
+                self.print_screen("Caracter inválido!")
+                self.get_pagina()
 
 class TelaCarrinho(Tela):
     programa = None
@@ -332,23 +411,56 @@ class TelaCarrinho(Tela):
         self.programa = programa
         self.pagina_atual = 0
         self.print_screen()
+        self.get_pagina()
     
     def get_produtos(self):
         return self.programa.get_prdutos( 0)
 
     def print_screen(self, msg=""):
         self.linha = self.linhas
-        self.print_ascii_texto(" Carinho")
-        self.print_menu_list(self.programa.get_prdutos_carrinho( self.pagina_atual),2,self.pagina_atual * 14)
-        self.print_linhas(self.linha - 2)
-        self.print_texto("Pagina atual: " + str(self.pagina_atual)  + " - Digite 's' para sair | " + msg, 0)
-        self.get_pagina()
+        self.print_ascii_texto(" Carrinho")
+        self.print_texto("Código|Quantidade|Descrição|Preço", 2)
+        self.print_menu_list(self.programa.get_prdutos_carrinho( self.pagina_atual),2,self.pagina_atual * 13)
+        self.print_linhas(self.linha - 3)
+        self.print_texto("Saldo Atual: " + str(self.programa.get_saldo_carrinho()),0)
+        self.print_texto("Pagina atual: " + str(self.pagina_atual)  + " - Digite 's' para sair e 'r' para remover | " + msg, 0)
+        
+    def get_remove(self):
+        opcoes_validas = "s0123456789"
+        codigo = str(input("Digite o código que você deseja remover: "))
 
-    
+        if codigo == None or codigo == "":
+            self.print_screen("Código Inválido!")
+            self.get_remove()
+
+        if codigo == 's':
+            TelaPricnipal(self.programa) 
+        else:
+            if str(codigo) not in opcoes_validas:
+                self.print_screen("Código Inválido!")
+                self.get_remove()
+            else:   
+                codigo = int(codigo)     
+                if codigo < 0 or codigo >= len(self.programa.carrinho[self.programa.usuario_logado.cpf]) or len(self.programa.carrinho[self.programa.usuario_logado.cpf]) == 0:
+                    self.print_screen("Código Inválido!")
+                    self.get_remove()
+                else:
+                    self.programa.remove_item_carrinho(codigo)
+                    self.print_screen()
+                    self.get_pagina()
+
     def get_pagina(self):
         pg = str(input("Qual pagina deseja visualizar: "))
+
+        if pg ==  None or pg == '':
+            self.print_screen()
+            self.get_pagina()
+
         if pg == 's':
             TelaPricnipal(self.programa) 
+        elif pg == 'r':
+            self.print_screen()
+            self.get_remove()
         else:
             is_number = True
 
@@ -359,8 +471,10 @@ class TelaCarrinho(Tela):
             if is_number:
                 self.pagina_atual = int(pg)
                 self.print_screen()
+                self.get_pagina()
             else:
-                self.print_screen("Caracter invalido!")
+                self.print_screen("Caracter inválido!")
+                self.get_pagina()
 
 class TelaClientes(Tela):
     programa = None
